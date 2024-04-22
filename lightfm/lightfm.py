@@ -9,6 +9,7 @@ from ._lightfm_fast import (
     CSRMatrix,
     FastLightFM,
     fit_bpr,
+    fit_quadratic,
     fit_logistic,
     fit_warp,
     fit_warp_kos,
@@ -46,6 +47,7 @@ class LightFM(object):
 
     - logistic: useful when both positive (1) and negative (-1) interactions
       are present.
+    - quadratic: MSE loss.
     - BPR: Bayesian Personalised Ranking [1]_ pairwise loss. Maximises the
       prediction difference between a positive example and a randomly
       chosen negative example. Useful when only positive interactions
@@ -77,7 +79,7 @@ class LightFM(object):
     learning_schedule: string, optional
         one of ('adagrad', 'adadelta').
     loss: string, optional
-        one of  ('logistic', 'bpr', 'warp', 'warp-kos'): the loss function.
+        one of  ('logistic', 'quadratic', 'bpr', 'warp', 'warp-kos'): the loss function.
     learning_rate: float, optional
         initial learning rate for the adagrad learning schedule.
     rho: float, optional
@@ -210,7 +212,7 @@ class LightFM(object):
         assert 0 < rho < 1
         assert epsilon >= 0
         assert learning_schedule in ("adagrad", "adadelta")
-        assert loss in ("logistic", "warp", "bpr", "warp-kos")
+        assert loss in ("logistic", "quadratic", "warp", "bpr", "warp-kos")
 
         if max_sampled < 1:
             raise ValueError("max_sampled must be a positive integer")
@@ -741,6 +743,21 @@ class LightFM(object):
                 self.n,
                 num_threads,
                 self.random_state,
+            )
+        elif loss == "quadratic":
+            fit_quadratic(
+                CSRMatrix(item_features),
+                CSRMatrix(user_features),
+                interactions.row,
+                interactions.col,
+                interactions.data,
+                sample_weight,
+                shuffle_indices,
+                lightfm_data,
+                self.learning_rate,
+                self.item_alpha,
+                self.user_alpha,
+                num_threads,
             )
         else:
             fit_logistic(

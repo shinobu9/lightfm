@@ -90,6 +90,22 @@ def test_logistic_precision():
     assert full_test_auc > 0.73
 
 
+def test_quadratic_precision():
+
+    model = LightFM(learning_rate=0.05, loss="quadratic", random_state=SEED)
+    model.fit_partial(train, epochs=10)
+
+    (train_precision, test_precision, full_train_auc, full_test_auc) = _get_metrics(
+        model, train, test
+    )
+
+    assert train_precision > 0.3
+    assert test_precision > 0.03
+
+    assert full_train_auc > 0.79
+    assert full_test_auc > 0.73
+
+
 def test_bpr_precision():
 
     model = LightFM(learning_rate=0.05, loss="bpr", random_state=SEED)
@@ -421,7 +437,7 @@ def test_movielens_accuracy_sample_weights():
     weights = train.copy()
     weights.data = np.ones(train.getnnz(), dtype=np.float32) * scale
 
-    for (loss, exp_score) in (("logistic", 0.74), ("bpr", 0.84), ("warp", 0.89)):
+    for (loss, exp_score) in (("logistic", 0.74), ("quadratic", 0.74), ("bpr", 0.84), ("warp", 0.89)):
         model = LightFM(loss=loss, random_state=SEED)
         model.learning_rate * 1.0 / scale
 
@@ -448,7 +464,7 @@ def test_movielens_accuracy_sample_weights_grad_accumulation():
     even_idx = np.arange(train.shape[0]) % 2 == 0
     odd_idx = np.arange(train.shape[0]) % 2 != 0
 
-    for loss in ("logistic", "bpr", "warp"):
+    for loss in ("logistic", "quadratic", "bpr", "warp"):
         model = LightFM(loss=loss, random_state=SEED)
 
         model.fit_partial(train, sample_weight=weights, epochs=1)
@@ -522,7 +538,7 @@ def test_zero_weights_accuracy():
     weights = train.copy()
     weights.data = np.zeros(train.getnnz(), dtype=np.float32)
 
-    for loss in ("logistic", "bpr", "warp"):
+    for loss in ("logistic", "quadratic", "bpr", "warp"):
         model = LightFM(loss=loss, random_state=SEED)
         model.fit_partial(train, sample_weight=weights, epochs=10)
 
@@ -548,7 +564,7 @@ def test_hogwild_accuracy():
 
 def test_movielens_excessive_regularization():
 
-    for loss in ("logistic", "warp", "bpr", "warp-kos"):
+    for loss in ("logistic", "quadratic", "warp", "bpr", "warp-kos"):
 
         # Should perform poorly with high regularization.
         # Check that regularization does not accumulate
